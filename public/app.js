@@ -494,7 +494,7 @@
       const row = (label, n, tab, ic, cls) => `<a class="list-row" href="#/outreach" data-ov-tab="${tab}" style="color:inherit;text-decoration:none"><span class="section-icon ${cls}" style="width:28px;height:28px">${icon(ic, 'sm')}</span><div class="grow"><div class="title">${label}</div></div><strong>${n}</strong></a>`;
       el.innerHTML = (c.REPLIED + c.TO_SEND + c.SENT + c.SKIPPED)
         ? row('Replied — waiting for you', c.REPLIED, 'REPLIED', 'chat', '') + row('To send', c.TO_SEND, 'TO_SEND', 'send', 'blue') + row('Waiting for reply', c.SENT, 'SENT', 'clock', 'amber') + row('Skipped', c.SKIPPED, 'SKIPPED', 'x', 'red')
-        : `<div class="empty"><span class="section-icon amber">${icon('upload', 'lg')}</span><h3>No outreach leads yet</h3><p>Import <code>whatsapp_leads.csv</code> on the <a href="#/outreach">Outreach</a> page.</p></div>`;
+        : `<div class="empty"><span class="section-icon amber">${icon('upload', 'lg')}</span><h3>No outreach leads yet</h3><p>Import the map scraper's <code>high_paying_leads.csv</code> on the <a href="#/outreach">Outreach</a> page.</p></div>`;
       $$('[data-ov-tab]', el).forEach((x) => x.addEventListener('click', () => { orState.tab = x.dataset.ovTab; }));
     }).catch(() => {});
     const att = [];
@@ -1157,7 +1157,7 @@
     const el = $('#or-list'); if (!el) return;
     if (!orState.list.length) {
       const total = Object.values(orState.counts).reduce((a, b) => a + b, 0);
-      el.innerHTML = `<div class="empty" style="padding:28px 16px"><p>${total ? 'Nothing here right now.' : 'No leads yet. Import <code>whatsapp_leads.csv</code> from the lead finder.'}</p></div>`;
+      el.innerHTML = `<div class="empty" style="padding:28px 16px"><p>${total ? 'Nothing here right now.' : 'No leads yet. Import the map scraper’s <code>high_paying_leads.csv</code> (as it is) with the button above.'}</p></div>`;
       return;
     }
     el.innerHTML = orState.list.map((l) => {

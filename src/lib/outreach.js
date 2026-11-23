@@ -19,17 +19,59 @@ const col = (row, ...names) => {
   return '';
 };
 const clip = (s, n) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, n);
-const safeUrl = (u) => (/^https?:\/\/[^\s/]+\.[^\s]+$/i.test(String(u || '').trim()) ? String(u).trim().slice(0, 500) : '');
+/** http(s) link with a real host, without tracking parameters; '' otherwise (e.g. Google ad links "https:///aclk?…"). */
+const safeUrl = (u) => {
+  const s = String(u || '').trim();
+  if (!/^https?:\/\/[^\s/]+\.[^\s]+$/i.test(s)) return '';
+  try { const x = new URL(s); if (/maps\.google|google\.[a-z.]+\/maps/.test(x.href)) return s.slice(0, 1000); return `${x.origin}${x.pathname}`.replace(/\/$/, '').slice(0, 500); } catch { return ''; }
+};
 
 /** One CSV row (export_whatsapp_leads.py format, or similar column names) → { phone, name, outreach } or { error }. */
+// Calling codes for numbers written without "+" (Google Maps usually shows "+1 …" for foreign businesses).
+const COUNTRY_CODES = {
+  canada: '1', usa: '1', 'united states': '1', us: '1', india: '91', 'united kingdom': '44', uk: '44', australia: '61',
+  'new zealand': '64', 'united arab emirates': '971', uae: '971', singapore: '65', ireland: '353', germany: '49',
+  france: '33', 'south africa': '27', 'saudi arabia': '966', qatar: '974',
+};
+/** Digits with country code: "+1 647-…" keeps its code; otherwise the row's country decides (India by default). */
+export function phoneFor(raw, country) {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+  if (s.startsWith('+') || s.startsWith('00')) {
+    const d = s.replace(/\D/g, '').replace(/^00/, '');
+    return isValidPhone(d) ? d : null;
+  }
+  const code = COUNTRY_CODES[String(country || '').trim().toLowerCase()];
+  if (!code) return normalizePhone(s);
+  let d = s.replace(/\D/g, '').replace(/^0+/, '');
+  if (!d.startsWith(code) || d.length <= 10) d = code + d;
+  return isValidPhone(d) ? d : null;
+}
+
+/**
+ * Website problems → separate points. Accepts "a | b" (export script) and the scraper's own
+ * "1) LEAD CAPTURE: … 2) Trust gaps: …" text, dropping the section labels.
+ */
+export function splitPains(text) {
+  const t = String(text || '').replace(/�/g, "'").replace(/\s+/g, ' ').trim();
+  if (!t) return [];
+  let parts = t.includes('|') ? t.split(/\s*\|\s*/) : t.split(/(?:^|\s)\d{1,2}[).]\s*/);
+  parts = parts.map((p) => p.trim().replace(/^[;.\-\s]+|[;\s]+$/g, '')).filter(Boolean);
+  if (parts.length <= 1) parts = t.split(/(?<=[.!?])\s+/).filter(Boolean);
+  return parts.slice(0, 5).map((p) => {
+    p = p.replace(/^[A-Za-z &/]{3,40}:\s*/, '');
+    return p.length > 240 ? `${p.slice(0, 240).replace(/\s+\S*$/, '')}…` : p;
+  });
+}
+
+/** One CSV row → { phone, name, outreach } or { error }. Reads the map scraper's high_paying_leads.csv directly, or whatsapp_leads.csv. */
 export function outreachFromRow(row) {
   const rawPhone = col(row, 'phone', 'whatsapp', 'mobile', 'phone_number', 'number');
-  // Numbers from the lead finder already carry their country code; "+1 647…" → 1647…
-  const phone = rawPhone.trim().startsWith('+') ? String(rawPhone).replace(/\D/g, '') : normalizePhone(rawPhone);
-  if (!isValidPhone(phone)) return { error: rawPhone || '(blank)' };
+  const country = col(row, 'country');
+  const phone = phoneFor(rawPhone, country);
+  if (!phone) return { error: rawPhone || '(blank)' };
   const name = clip(col(row, 'name', 'business', 'business_name', 'company'), 120);
-  const pains = col(row, 'pain_points', 'problems', 'website_problems')
-    .split(/\s*\|\s*|\s*\n\s*/).map((p) => clip(p, 240)).filter(Boolean).slice(0, 5);
+  const pains = splitPains(col(row, 'pain_points', 'problems', 'website_problems'));
   const outreach = {
     business: name,
     category: clip(col(row, 'category', 'industry'), 80),

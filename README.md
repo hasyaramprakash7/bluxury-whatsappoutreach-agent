@@ -24,7 +24,7 @@ Live: https://whatsapp-agent-outreach.hasya7893828468.workers.dev
 
 ## How outreach works
 
-1. **Leads in.** The lead finder writes `data/whatsapp_leads.csv` at the end of every run (or `python scripts/export_whatsapp_leads.py <high_paying_leads.csv> <out.csv>`): phone with country code, business name, pain points, what it costs them, pitch angle, Maps link.
+1. **Leads in.** Import the map scraper's own `data/high_paying_leads.csv` as it is — phone, name, website, website problems ("1) … 2) …"), what it costs them, pitch angle and Maps link are read directly. (`whatsapp_leads.csv` from `scripts/export_whatsapp_leads.py` works too.) Numbers without "+" get the code of their country column.
 2. **First message from the CSV.** On **Outreach**, tick *Send first message to everyone* and import. Each business gets your outreach template:
    `{{1}}` their business name · `{{2}}` their own problem sentence from the CSV ("what it costs them") · `{{3}}` your business name.
    Untick it to import only and pick an AI-written first message lead by lead instead.
