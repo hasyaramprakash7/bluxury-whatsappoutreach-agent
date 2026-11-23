@@ -8,49 +8,37 @@
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
 
-  // Dashboard files. API, webhook, WebSocket and health routes run in the Worker first.
+  // Dashboard files. API, webhook and health run in the Worker first.
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/webhook", "/webhook/*", "/ws", "/health"]
+    "run_worker_first": ["/api/*", "/webhook", "/health"]
   },
 
-  // Businesses, flows, leads and every chat message (SQLite).
+  // Settings, leads and messages (SQLite).
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "whatsapp-agent-outreach",
-      "database_id": "c926df24-c024-4643-9184-be939d03b77f",
+      "database_name": "bluxury-outreach",
+      "database_id": "cb9b477f-24f9-45bd-994b-c9f9a40da387",
       "migrations_dir": "migrations"
     }
   ],
 
-  // ConversationDO: one per customer chat (ordering, flow state, never-lost inbox).
-  // BusinessHub: one per business (live dashboard WebSockets, broadcast pacing).
-  "durable_objects": {
-    "bindings": [
-      { "name": "CONVERSATION", "class_name": "ConversationDO" },
-      { "name": "HUB", "class_name": "BusinessHub" }
-    ]
-  },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ConversationDO", "BusinessHub"] }],
+  // Earlier versions of this Worker had two Durable Objects; v2 removes them.
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["ConversationDO", "BusinessHub"] },
+    { "tag": "v2", "deleted_classes": ["ConversationDO", "BusinessHub"] }
+  ],
 
-  // Brochures and other documents sent to customers.
-  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "rk-interior-media" }],
-
-  // Workers AI for the assistant.
+  // Workers AI writes the message suggestions.
   "ai": { "binding": "AI" },
 
   "vars": {
     "AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
     "GRAPH_API_VERSION": "v25.0",
-    "GRAPH_BASE_URL": "https://graph.facebook.com",
-    "R2_PUBLIC_BASE_URL": "https://pub-8d93705764b8407a957deeec1fc05dda.r2.dev",
-    "SITE_UTC_OFFSET": "+05:30",
-    "DEFAULT_BROADCAST_TEMPLATE": "realestate_reengage_v1",
-    "DEFAULT_BROADCAST_LANGUAGE": "en",
-    "BROADCAST_RATE_PER_SECOND": "10"
+    "GRAPH_BASE_URL": "https://graph.facebook.com"
   }
-  // Secrets (wrangler secret put / .dev.vars): ADMIN_API_KEY, META_APP_SECRET, WHATSAPP_VERIFY_TOKEN, TOKEN_ENCRYPTION_KEY
+  // Secrets (wrangler secret put / .dev.vars): ADMIN_API_KEY, TOKEN_ENCRYPTION_KEY, WHATSAPP_VERIFY_TOKEN, META_APP_SECRET
 }
