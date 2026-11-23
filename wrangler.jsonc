@@ -1,5 +1,5 @@
 {
-  // Bluxury Outreach Agent: WhatsApp outreach to leads from the map-ai lead finder.
+  // Bluxury Outreach Agent: WhatsApp outreach to leads from the map-ai lead finder, plus inbox, leads and broadcasts.
   // Deploy: npm run deploy  ·  Live: https://whatsapp-agent-outreach.hasya7893828468.workers.dev
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "whatsapp-agent-outreach",
@@ -8,37 +8,49 @@
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
 
-  // Dashboard files. API, webhook and health run in the Worker first.
+  // Dashboard files. API, webhook, WebSocket and health routes run in the Worker first.
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/webhook", "/health"]
+    "run_worker_first": ["/api/*", "/webhook", "/webhook/*", "/ws", "/health"]
   },
 
-  // Settings, leads and messages (SQLite).
+  // Businesses, leads and every chat message (SQLite).
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "bluxury-outreach",
-      "database_id": "cb9b477f-24f9-45bd-994b-c9f9a40da387",
+      "database_name": "whatsapp-agent-outreach",
+      "database_id": "c926df24-c024-4643-9184-be939d03b77f",
       "migrations_dir": "migrations"
     }
   ],
 
-  // Earlier versions of this Worker had two Durable Objects; v2 removes them.
+  // ConversationDO: one per chat (never-lost inbox, in-order processing, AI reply drafts for outreach leads).
+  // BusinessHub: one per business (live dashboard WebSockets, paced broadcasts and bulk first messages).
+  "durable_objects": {
+    "bindings": [
+      { "name": "CONVERSATION", "class_name": "ConversationDO" },
+      { "name": "HUB", "class_name": "BusinessHub" }
+    ]
+  },
+  // v2 removed the objects in the slim version; v3 brings them back (empty).
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["ConversationDO", "BusinessHub"] },
-    { "tag": "v2", "deleted_classes": ["ConversationDO", "BusinessHub"] }
+    { "tag": "v2", "deleted_classes": ["ConversationDO", "BusinessHub"] },
+    { "tag": "v3", "new_sqlite_classes": ["ConversationDO", "BusinessHub"] }
   ],
 
-  // Workers AI writes the message suggestions.
+  // Workers AI writes the outreach message suggestions.
   "ai": { "binding": "AI" },
 
   "vars": {
     "AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
     "GRAPH_API_VERSION": "v25.0",
-    "GRAPH_BASE_URL": "https://graph.facebook.com"
+    "GRAPH_BASE_URL": "https://graph.facebook.com",
+    "DEFAULT_BROADCAST_TEMPLATE": "hello_world",
+    "DEFAULT_BROADCAST_LANGUAGE": "en_US",
+    "BROADCAST_RATE_PER_SECOND": "10"
   }
-  // Secrets (wrangler secret put / .dev.vars): ADMIN_API_KEY, TOKEN_ENCRYPTION_KEY, WHATSAPP_VERIFY_TOKEN, META_APP_SECRET
+  // Secrets (wrangler secret put / .dev.vars): ADMIN_API_KEY, META_APP_SECRET, WHATSAPP_VERIFY_TOKEN, TOKEN_ENCRYPTION_KEY
 }

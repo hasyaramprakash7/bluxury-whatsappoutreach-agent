@@ -1,17 +1,15 @@
 // Phone numbers, CSV parsing and small text helpers.
 
-/** Digits with country code. "+1 647…" keeps its code; 10-digit numbers without one get +91. Null if invalid. */
+/** Digits with country code; 10-digit numbers get the default code (India: 91). Null if invalid. */
 export function normalizePhone(raw, defaultCountryCode = '91') {
   if (!raw) return null;
-  const s = String(raw).trim();
-  let digits = s.replace(/[^0-9]/g, '');
-  if (s.startsWith('00')) digits = digits.slice(2);
-  else if (!s.startsWith('+')) {
-    if (digits.length === 10) digits = defaultCountryCode + digits;
-    else if (digits.startsWith('0') && digits.length === 11) digits = defaultCountryCode + digits.slice(1);
-  }
-  return /^\d{11,15}$/.test(digits) ? digits : null;
+  let digits = String(raw).replace(/[^0-9]/g, '');
+  if (digits.length === 10) digits = defaultCountryCode + digits;
+  if (digits.startsWith('0') && digits.length === 11) digits = defaultCountryCode + digits.slice(1);
+  if (digits.length < 11 || digits.length > 15) return null;
+  return digits;
 }
+export const isValidPhone = (digits) => typeof digits === 'string' && /^\d{11,15}$/.test(digits);
 
 /** RFC-4180-ish CSV parser (quotes, escaped quotes, CRLF). Returns objects keyed by the header row. */
 export function parseCsv(text) {
@@ -40,8 +38,23 @@ export function parseCsv(text) {
   return rows.slice(1).map((r) => Object.fromEntries(header.map((h, i) => [h, (r[i] ?? '').trim()])));
 }
 
-/** Replaces {placeholders}. */
-export const fill = (text, vars) => String(text || '').replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null && vars[k] !== '' ? String(vars[k]) : m));
-export const clip = (s, n) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, n);
+const PHONE_COLUMNS = ['phone', 'mobile', 'phonenumber', 'phone number', 'whatsapp', 'whatsapp number', 'number', 'contact'];
+const NAME_COLUMNS = ['name', 'fullname', 'full name', 'customer', 'customer name', 'first name'];
+export function pickColumn(row, candidates) {
+  const keys = Object.keys(row);
+  for (const c of candidates) {
+    const k = keys.find((x) => x.toLowerCase() === c);
+    if (k && row[k]) return String(row[k]).trim();
+  }
+  return null;
+}
+export const pickPhone = (row) => pickColumn(row, PHONE_COLUMNS);
+export const pickName = (row) => pickColumn(row, NAME_COLUMNS);
+
+/** Replaces {placeholders}; unknown ones are left as typed so the vendor can spot them. */
+export function fill(text, vars) {
+  return String(text || '').replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined && vars[k] !== null && vars[k] !== '' ? String(vars[k]) : m));
+}
+
 export const nowIso = () => new Date().toISOString();
 export const json = (v, fallback) => { try { return v ? JSON.parse(v) : fallback; } catch { return fallback; } };

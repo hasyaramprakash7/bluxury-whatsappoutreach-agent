@@ -1,13 +1,13 @@
 {
   "name": "bluxury-outreach-agent",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
-  "description": "WhatsApp outreach for leads from the map-ai lead finder: AI suggests messages from each business's website problems, you pick and send. Cloudflare Workers, D1, Workers AI.",
+  "description": "WhatsApp outreach + inbox for leads from the map-ai lead finder: first message from your CSV, AI-suggested replies from each business's website problems. Cloudflare Workers, D1, Durable Objects, Workers AI.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "db:migrate:local": "wrangler d1 migrations apply bluxury-outreach --local",
-    "db:migrate:remote": "wrangler d1 migrations apply bluxury-outreach --remote",
+    "db:migrate:local": "wrangler d1 migrations apply whatsapp-agent-outreach --local",
+    "db:migrate:remote": "wrangler d1 migrations apply whatsapp-agent-outreach --remote",
     "deploy": "wrangler deploy",
     "check": "node --check public/app.js && wrangler deploy --dry-run --outdir .wrangler/dry"
   },
