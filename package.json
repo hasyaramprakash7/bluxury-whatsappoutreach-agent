@@ -1,0 +1,19 @@
+{
+  "name": "bluxury-outreach-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WhatsApp outreach for leads from the map-ai lead finder: AI drafts messages from each business's website problems, a person picks and sends. Cloudflare Workers, D1, Durable Objects, Workers AI.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply whatsapp-agent-outreach --local",
+    "db:migrate:remote": "wrangler d1 migrations apply whatsapp-agent-outreach --remote"
+  },
+  "dependencies": {
+    "hono": "4.13.19"
+  },
+  "devDependencies": {
+    "wrangler": "4.166.0"
+  }
+}

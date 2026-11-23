@@ -1,0 +1,56 @@
+{
+  // Bluxury Outreach Agent: WhatsApp outreach to leads from the map-ai lead finder.
+  // Deploy: npm run deploy  ·  Live: https://whatsapp-agent-outreach.hasya7893828468.workers.dev
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "whatsapp-agent-outreach",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+
+  // Dashboard files. API, webhook, WebSocket and health routes run in the Worker first.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/webhook", "/webhook/*", "/ws", "/health"]
+  },
+
+  // Businesses, flows, leads and every chat message (SQLite).
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "whatsapp-agent-outreach",
+      "database_id": "c926df24-c024-4643-9184-be939d03b77f",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // ConversationDO: one per customer chat (ordering, flow state, never-lost inbox).
+  // BusinessHub: one per business (live dashboard WebSockets, broadcast pacing).
+  "durable_objects": {
+    "bindings": [
+      { "name": "CONVERSATION", "class_name": "ConversationDO" },
+      { "name": "HUB", "class_name": "BusinessHub" }
+    ]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ConversationDO", "BusinessHub"] }],
+
+  // Brochures and other documents sent to customers.
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "rk-interior-media" }],
+
+  // Workers AI for the assistant.
+  "ai": { "binding": "AI" },
+
+  "vars": {
+    "AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    "GRAPH_API_VERSION": "v25.0",
+    "GRAPH_BASE_URL": "https://graph.facebook.com",
+    "R2_PUBLIC_BASE_URL": "https://pub-8d93705764b8407a957deeec1fc05dda.r2.dev",
+    "SITE_UTC_OFFSET": "+05:30",
+    "DEFAULT_BROADCAST_TEMPLATE": "realestate_reengage_v1",
+    "DEFAULT_BROADCAST_LANGUAGE": "en",
+    "BROADCAST_RATE_PER_SECOND": "10"
+  }
+  // Secrets (wrangler secret put / .dev.vars): ADMIN_API_KEY, META_APP_SECRET, WHATSAPP_VERIFY_TOKEN, TOKEN_ENCRYPTION_KEY
+}
